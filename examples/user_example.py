@@ -6,10 +6,7 @@ def main():
     with PyTok() as api:
         user = api.user(username="therock")
 
-        videos = []
-        for video in user.videos():
-            videos.append(video.info())
-
+        videos = [video.info() for video in user.videos()]
         with open("out.json", "w") as f:
             json.dump(videos, f)
 

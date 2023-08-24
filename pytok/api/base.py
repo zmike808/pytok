@@ -30,12 +30,11 @@ class Base:
         if driver.find_elements(By.CLASS_NAME, 'captcha_verify_container'):
             if self.parent._headless:
                 raise exceptions.CaptchaException('Captcha was thrown, re-run with headless=False and solve the captcha.')
-            else:
-                try:
-                    WebDriverWait(driver, CAPTCHA_DELAY).until_not(EC.presence_of_element_located((By.CLASS_NAME, 'captcha_verify_container')))
-                    element = WebDriverWait(driver, TOK_DELAY).until(EC.presence_of_element_located((By.CSS_SELECTOR, f'[data-e2e={content_tag}]')))
-                except TimeoutException as e:
-                    raise exceptions.TimeoutException(str(e))
+            try:
+                WebDriverWait(driver, CAPTCHA_DELAY).until_not(EC.presence_of_element_located((By.CLASS_NAME, 'captcha_verify_container')))
+                element = WebDriverWait(driver, TOK_DELAY).until(EC.presence_of_element_located((By.CSS_SELECTOR, f'[data-e2e={content_tag}]')))
+            except TimeoutException as e:
+                raise exceptions.TimeoutException(str(e))
 
         return element
 
@@ -70,10 +69,7 @@ class Base:
 
     def get_response_body(self, request, decode=True):
         body_bytes = seleniumwire.utils.decode(request.response.body, request.response.headers.get('Content-Encoding', 'identity'))
-        if decode:
-            return body_bytes.decode('utf-8')
-        else:
-            return body_bytes
+        return body_bytes.decode('utf-8') if decode else body_bytes
 
     def scroll_to_bottom(self, speed=4):
         current_scroll_position = self.parent._browser.execute_script("return document.documentElement.scrollTop || document.body.scrollTop;")
@@ -112,10 +108,9 @@ class Base:
 
     def check_and_wait_for_captcha(self):
         driver = self.parent._browser
-        if driver.find_elements(By.CLASS_NAME, 'captcha_verify_container'):
-            try:
-                WebDriverWait(driver, CAPTCHA_DELAY).until_not(EC.presence_of_element_located((By.CLASS_NAME, 'captcha_verify_container')))
-            except TimeoutException as e:
-                raise exceptions.TimeoutException(str(e))
-        else:
+        if not driver.find_elements(By.CLASS_NAME, 'captcha_verify_container'):
             raise exceptions.TikTokException("Captcha requested but not found in browser")
+        try:
+            WebDriverWait(driver, CAPTCHA_DELAY).until_not(EC.presence_of_element_located((By.CLASS_NAME, 'captcha_verify_container')))
+        except TimeoutException as e:
+            raise exceptions.TimeoutException(str(e))

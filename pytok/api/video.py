@@ -228,9 +228,7 @@ class Video(Base):
                 # force new request for cache
                 self._get_comments_and_req()
 
-            reply_comments = res.get("comments", [])
-
-            if reply_comments:
+            if reply_comments := res.get("comments", []):
                 comment['reply_comment'] = comment['reply_comment'] + reply_comments if comment['reply_comment'] else reply_comments
 
             has_more = res.get("has_more")
@@ -277,9 +275,7 @@ class Video(Base):
                 # force new request for cache
                 self._get_comments_and_req()
 
-            comments = res.get("comments", [])
-
-            if comments:
+            if comments := res.get("comments", []):
                 for comment in comments:
                     self._get_comment_replies(comment, batch_size)
 

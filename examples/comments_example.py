@@ -13,9 +13,10 @@ videos = [
 
 with PyTok(chrome_version=104) as api:
     for video in videos:
-        comments = []
-        for comment in api.video(id=video['id'], username=video['author']['uniqueId']).comments(count=1000):
-            comments.append(comment)
-
+        comments = list(
+            api.video(
+                id=video['id'], username=video['author']['uniqueId']
+            ).comments(count=1000)
+        )
         with open("out.json", "w") as f:
             json.dump(comments, f)

@@ -109,8 +109,10 @@ class User(Base):
         tag_contents = extract_tag_contents(html_body)
         data = json.loads(tag_contents)
 
-        user = data["UserModule"]["users"][self.username] | data["UserModule"]["stats"][self.username]
-        return user
+        return (
+            data["UserModule"]["users"][self.username]
+            | data["UserModule"]["stats"][self.username]
+        )
 
     def videos(self, count=None, batch_size=100, **kwargs) -> Iterator[Video]:
         """
@@ -199,7 +201,7 @@ class User(Base):
     def _get_videos_individual(self, count):
         driver = User.parent._browser
 
-        content = driver.find_element(By.CSS_SELECTOR, f"[data-e2e=user-post-item]")
+        content = driver.find_element(By.CSS_SELECTOR, "[data-e2e=user-post-item]")
         content.click()
 
         self.wait_for_content_or_captcha('browse-video')
@@ -216,15 +218,16 @@ class User(Base):
 
             all_videos += res['itemList']
 
-            if still_more:
-                content = driver.find_element(By.CSS_SELECTOR, f"[data-e2e=browse-video]")
-                content.send_keys(Keys.DOWN)
+            content = driver.find_element(By.CSS_SELECTOR, "[data-e2e=browse-video]")
+            content.send_keys(Keys.DOWN)
 
     def _load_each_video(self, videos):
         driver = User.parent._browser
 
         # get description elements with identifiable links
-        all_desc_elements = driver.find_elements(By.CSS_SELECTOR, f'[data-e2e=user-post-item-desc]')
+        all_desc_elements = driver.find_elements(
+            By.CSS_SELECTOR, '[data-e2e=user-post-item-desc]'
+        )
 
         video_elements = []
         for video in videos:
@@ -234,11 +237,6 @@ class User(Base):
                     video_element = desc_element.find_element(By.XPATH, '..').children()[0]
                     video_elements.append((video, video_element))
                     break
-            else:
-                pass
-                # TODO log this
-                # raise Exception(f"Could not find video element for video {video['id']}")
-
         a = ActionChains(driver)
 
         for i, (video, element) in enumerate(video_elements):
@@ -280,17 +278,14 @@ class User(Base):
             self._load_each_video(videos)
 
             amount_yielded += len(videos)
-            video_objs = [self.parent.video(data=video) for video in videos]
-
-            yield from video_objs
-
+            yield from [self.parent.video(data=video) for video in videos]
             has_more = res['ItemList']['user-post']['hasMore']
             if not has_more:
                 User.parent.logger.info(
                     "TikTok isn't sending more TikToks beyond this point."
                 )
                 return
-            
+
             if count and amount_yielded >= count:
                 return
 
@@ -343,10 +338,7 @@ class User(Base):
                 self._load_each_video(videos)
 
                 amount_yielded += len(videos)
-                video_objs = [self.parent.video(data=video) for video in videos]
-
-                yield from video_objs
-
+                yield from [self.parent.video(data=video) for video in videos]
                 if count and amount_yielded >= count:
                     return
 
@@ -398,9 +390,7 @@ class User(Base):
                 "priority_region": processed.region,
                 "language": processed.language,
             }
-            path = "api/favorite/item_list/?{}&{}".format(
-                User.parent._add_url_params(), urlencode(query)
-            )
+            path = f"api/favorite/item_list/?{User.parent._add_url_params()}&{urlencode(query)}"
 
             res = self.parent.get_data(path, **kwargs)
 

@@ -51,8 +51,7 @@ def get_comment_df(comments):
         except ValueError:
             continue
 
-        comment_replies = comment.get('reply_comment', None)
-        if comment_replies:
+        if comment_replies := comment.get('reply_comment', None):
             for reply_comment in comment_replies:
                 try:
                     reply_author_id, reply_author_name, reply_mentioned_users = _get_comment_features(reply_comment)
@@ -123,8 +122,6 @@ def try_load_video_df_from_file(csv_path, file_paths=[]):
         video_df['createtime'] = pd.to_datetime(video_df['createtime'])
         video_df['mentions'] = video_df['mentions'].apply(_str_to_list)
         video_df['hashtags'] = video_df['hashtags'].apply(_str_to_list)
-        return video_df
-
     else:
         videos = []
         for file_path in file_paths:
@@ -137,10 +134,11 @@ def try_load_video_df_from_file(csv_path, file_paths=[]):
                 videos.append(file_data)
             else:
                 raise ValueError()
-            
+
         video_df = get_video_df(videos)
         video_df.to_csv(csv_path, index=False)
-        return video_df
+
+    return video_df
 
 def get_video_df(videos):
     vids_data = []
@@ -150,7 +148,7 @@ def get_video_df(videos):
 
         # get all reply types
         match = re.search("^\#([^# ]+) [^@# ]+ @([^ ]+)", video['desc'])
-        if match and len(video_mentions) > 0:
+        if match and video_mentions:
             # if there are multiple mentions we get the first
             if video_mentions[0]['awemeId'] != '':
                 share_video_id = video_mentions[0]['awemeId']
@@ -159,7 +157,7 @@ def get_video_df(videos):
             else:
                 # no way to get shared video id
                 share_video_id = None
-            
+
             share_video_user_id = video_mentions[0]['userId']
             share_video_user_name = video_mentions[0]['userUniqueId']
             share_type = match.group(1)
@@ -173,15 +171,17 @@ def get_video_df(videos):
 
         # get duets that we didn't get with the regex
         if video.get('duetFromId', None) and video['duetFromId'] != '0' and not share_video_id:
-            duet_infos = [mention for mention in video_mentions if mention['awemeId'] == video['duetInfo']['duetFromId']]
-            # sometimes the awemeId is missing
-            if duet_infos:
+            if duet_infos := [
+                mention
+                for mention in video_mentions
+                if mention['awemeId'] == video['duetInfo']['duetFromId']
+            ]:
                 duet_info = duet_infos[0]
                 share_video_id = duet_info['awemeId']
             else:
                 duet_info = video_mentions[0]
                 share_video_id = video['duetInfo']['duetFromId']
-            
+
             share_video_user_id = duet_info['userId']
             share_video_user_name = duet_info['userUniqueId']
             share_type = 'duet'
@@ -216,7 +216,7 @@ def get_video_df(videos):
     ])
     video_df = video_df.drop_duplicates('video_id')
     video_df = video_df[video_df['desc'].notna()]
-    
+
     return video_df
 
 
@@ -228,8 +228,6 @@ def try_load_user_df_from_file(csv_path, file_paths=[]):
         user_df['videoCount'] = user_df['videoCount'].astype('Int64')
         user_df['diggCount'] = user_df['diggCount'].astype('Int64')
         user_df['createtime'] = pd.to_datetime(user_df['createtime'])
-        return user_df
-
     else:
         entities = []
         for file_path in tqdm.tqdm(file_paths):
@@ -243,11 +241,12 @@ def try_load_user_df_from_file(csv_path, file_paths=[]):
                 entities += file_data
             else:
                 raise ValueError()
-            
+
         user_df = get_user_df(entities)
         # protect against people with \r as nickname, how dare they
         user_df.to_csv(csv_path, index=False, line_terminator="\r\n")
-        return user_df
+
+    return user_df
 
 def get_user_df(entities):
     users = {} 

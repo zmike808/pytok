@@ -137,8 +137,6 @@ class Hashtag(Base):
                     tries += 1
                     if tries > MAX_TRIES:
                         raise
-                    continue
-
             elif pull_method == 'requests':
                 cursor = res["cursor"]
                 next_url = re.sub("cursor=([0-9]+)", f"cursor={cursor}", request.url)

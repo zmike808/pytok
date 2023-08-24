@@ -119,8 +119,7 @@ class PyTok:
     #
 
     def r1(self, pattern, text):
-        m = re.search(pattern, text)
-        if m:
+        if m := re.search(pattern, text):
             return m.group(1)
 
     def shutdown(self) -> None:
